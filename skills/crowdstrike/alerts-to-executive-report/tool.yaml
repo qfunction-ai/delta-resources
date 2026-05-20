@@ -1,0 +1,5 @@
+name: get_crowdstrike_alerts
+description: "Gets all alerts from CrowdStrike"
+entry_point: get_crowdstrike_alerts
+source: scripts/get_crowdstrike_alerts.py
+requirements: requirements.txt
