@@ -2,7 +2,7 @@ import os
 from falconpy import Hosts
 import json
 
-def query_all_hosts_falconpy():
+def get_all_crowdstrike_hosts():
     """
     Connects to CrowdStrike Falcon via falconpy to query all hosts and returns a list of their hostnames and device IDs.
     
