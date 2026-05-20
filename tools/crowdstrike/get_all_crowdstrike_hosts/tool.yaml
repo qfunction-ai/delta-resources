@@ -1,0 +1,5 @@
+name: get_all_crowdstrike_hosts
+description: "Gets all hosts from CrowdStrike"
+entry_point: get_all_crowdstrike_hosts
+source: get_all_crowdstrike_hosts.py
+requirements: requirements.txt
