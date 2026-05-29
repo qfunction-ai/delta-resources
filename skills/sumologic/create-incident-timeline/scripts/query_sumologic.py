@@ -13,8 +13,6 @@ access_key = creds.get("secondary_key", "")
 
 def query_sumologic(
     query: str,
-    access_id: str = access_id,
-    access_key: str = access_key,
     host: str = "https://api.sumologic.com/api",
     from_time: str = None,
     to_time: str = None,
@@ -24,8 +22,6 @@ def query_sumologic(
 
     Args:
         query: SumoLogic query string.
-        access_id: Access ID for Basic Auth.
-        access_key: Access key for Basic Auth.
         host: API endpoint (default: US1). Other regions: api.us2.sumologic.com, api.eu.sumologic.com, etc.
         from_time: Start time as ISO string (e.g., "2026-05-28T00:00:00Z"). Defaults to 1 hour ago.
         to_time: End time as ISO string. Defaults to now.
@@ -52,6 +48,10 @@ def query_sumologic(
 
     from_ms = int(from_dt.timestamp() * 1000)
     to_ms = int(now.timestamp() * 1000)
+
+    creds = json.loads(os.getenv("CREDENTIAL_SUMOLOGIC_KEYS"))
+    access_id = creds.get("primary_key", "")
+    access_key = creds.get("secondary_key", "")
 
     with httpx.Client(
         base_url=host,
