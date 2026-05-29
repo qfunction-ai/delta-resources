@@ -7,8 +7,8 @@ description: This skill retrieves SumoLogic logs and analyzes them for high conf
 
 2. Use your query_sumologic tool to retrieve the SumoLogic logs according to the query and time range the user provided
 
-3. The query_sumologic tool returns a list of dictionaries. For each dictionary in the list, access the string contained in the "['event_data']['CommandLine']" property of the dictionary and determine whether there are potentially malicious commands in the string. If there are, flag the string. Be sure to keep track of all strings in the list that were flagged and go through ALL OF THE DICTIONARIES IN THE LIST.
+3. The query_sumologic tool returns a Python dictionary with a "file_path" key that lets you know where all of the SumoLogic logs are stored. Use your grep_files tool to find malicious strings in the file having to do with LOLBINs. Keep track of your findings
 
-4. Now you have a list of flagged strings. Determine whether they are correlated, and if they are, you have an incident.
+4. If you have any findings from the previous step, determine whether they are correlated, and if they are, you have an incident.
 
 5. If you have an incident, create a timeline of the incident from the flagged strings. If you don't have an incident, inform the user of any flagged strings and why you flagged them. If you don't have any flagged strings at all, inform the user that no malicious activity was found 
