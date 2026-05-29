@@ -5,12 +5,6 @@ import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-
-creds = json.loads(os.getenv("CREDENTIAL_SUMOLOGIC_KEYS"))
-access_id = creds.get("primary_key", "")
-access_key = creds.get("secondary_key", "")
-
-
 def query_sumologic(
     query: str,
     host: str = "https://api.sumologic.com/api",
