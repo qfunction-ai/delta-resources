@@ -3,20 +3,20 @@ import json
 import os
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Any
+
 
 def query_sumologic(
     query: str,
-    host: str = "https://api.sumologic.com/api",
     from_time: str = None,
     to_time: str = None,
     max_results: int = 10_000,
 ) -> list[str]:
     """Query SumoLogic logs via Search Job API v2.
 
+    Credentials and API endpoint are auto-configured from the agent's environment.
+
     Args:
         query: SumoLogic query string.
-        host: API endpoint (default: US1). Other regions: api.us2.sumologic.com, api.eu.sumologic.com, etc.
         from_time: Start time as ISO string (e.g., "2026-05-28T00:00:00Z"). Defaults to 1 hour ago.
         to_time: End time as ISO string. Defaults to now.
         max_results: Maximum messages to return.
@@ -46,6 +46,7 @@ def query_sumologic(
     creds = json.loads(os.getenv("CREDENTIAL_SUMOLOGIC_KEYS"))
     access_id = creds.get("primary_key", "")
     access_key = creds.get("secondary_key", "")
+    host = creds.get("url", "") or "https://api.sumologic.com/api"
 
     with httpx.Client(
         base_url=host,
