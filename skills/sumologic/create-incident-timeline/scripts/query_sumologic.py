@@ -9,8 +9,8 @@ def query_sumologic(
     query: str,
     from_time: str = None,
     to_time: str = None,
-    max_results: int = 10_000,
-) -> list[str]:
+    max_results: int = 1_000,
+) -> list[dict]:
     """Query SumoLogic logs via Search Job API v2.
 
     Credentials and API endpoint are auto-configured from the agent's environment.
@@ -19,10 +19,10 @@ def query_sumologic(
         query: SumoLogic query string.
         from_time: Start time as ISO string (e.g., "2026-05-28T00:00:00Z"). Defaults to 1 hour ago.
         to_time: End time as ISO string. Defaults to now.
-        max_results: Maximum messages to return.
+        max_results: Maximum messages to return. Default 1000.
 
     Returns:
-        List of raw log strings from the _raw field.
+        List of compact log records with key fields extracted.
     """
     now = datetime.now(timezone.utc)
 
@@ -41,7 +41,7 @@ def query_sumologic(
         to_dt = now
 
     from_ms = int(from_dt.timestamp() * 1000)
-    to_ms = int(now.timestamp() * 1000)
+    to_ms = int(to_dt.timestamp() * 1000)
 
     creds = json.loads(os.getenv("CREDENTIAL_SUMOLOGIC_KEYS"))
     access_id = creds.get("primary_key", "")
@@ -95,5 +95,59 @@ def query_sumologic(
             except Exception:
                 pass
 
-    raw_logs = [json.loads(m.get("_raw", "")) for m in results]
-    return raw_logs
+    compact = []
+    for m in results:
+        raw = m.get("_raw", "{}")
+        try:
+            parsed = json.loads(raw) if isinstance(raw, str) else raw
+        except (json.JSONDecodeError, TypeError):
+            compact.append({"_raw": str(raw)[:500]})
+            continue
+
+        record = {}
+        # Extract timestamp
+        for ts_key in ("@timestamp", "timestamp", "time", "TimeGenerated", "UtcTime"):
+            val = parsed.get(ts_key)
+            if val:
+                record["timestamp"] = val
+                break
+
+        # Extract common security/log fields — keep only what's useful
+        _keep_keys = {
+            "event_id", "EventID", "event_type", "EventType",
+            "level", "Level", "severity", "Severity",
+            "source", "Source", "Provider", "provider",
+            "message", "Message", "message_text",
+            "computer", "ComputerName", "hostname", "Host",
+            "user", "UserName", "User", "account", "SubjectUserName",
+            "process", "ProcessName", "Image", "process_name",
+            "pid", "ProcessId", "process_id",
+            "command", "CommandLine", "command_line",
+            "action", "Action", "action_type",
+            "ip", "IpAddress", "SourceIp", "DestIp", "source_ip", "dest_ip",
+            "port", "Port", "SourcePort", "DestPort",
+            "protocol", "Protocol",
+            "result", "Result", "status", "Status",
+            "record_id", "RecordID",
+        }
+        for k, v in parsed.items():
+            if k in _keep_keys:
+                record[k] = v
+            elif k.lower() in {k_.lower() for k_ in _keep_keys}:
+                record[k] = v
+
+        # Flatten nested event_id / execution / rendering_info
+        for nested_key in ("event_id", "execution", "rendering_info"):
+            nested = parsed.get(nested_key, {})
+            if isinstance(nested, dict):
+                for nk, nv in nested.items():
+                    if nk in _keep_keys or nk.lower() in {k_.lower() for k_ in _keep_keys}:
+                        record[nk] = nv
+
+        # If nothing was extracted, keep a truncated raw fallback
+        if len(record) <= 1:  # only timestamp
+            record["_raw"] = str(raw)[:500]
+
+        compact.append(record)
+
+    return compact
