@@ -95,4 +95,5 @@ def query_sumologic(
             except Exception:
                 pass
 
-    return [m.get("_raw", "") for m in results]
+    raw_logs = [json.loads(m.get("_raw", "")) for m in results]
+    return raw_logs

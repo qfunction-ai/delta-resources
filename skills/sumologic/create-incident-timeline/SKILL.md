@@ -7,7 +7,7 @@ description: This skill retrieves SumoLogic logs and analyzes them for high conf
 
 2. Use your query_sumologic tool to retrieve the SumoLogic logs according to the query and time range the user provided
 
-3. The query_sumologic tool should return a list of strings. Go through each string in the list one by one and for each string, determine whether there are potentially malicious commands in the string. If there are, flag that string. Be sure to keep track of all strings in the list that were flagged
+3. The query_sumologic tool returns a list of dictionaries. For each dictionary in the list, access the string contained in the "['event_data']['CommandLine']" property of the dictionary and determine whether there are potentially malicious commands in the string. If there are, flag the string. Be sure to keep track of all strings in the list that were flagged and go through ALL OF THE DICTIONARIES IN THE LIST.
 
 4. Now you have a list of flagged strings. Determine whether they are correlated, and if they are, you have an incident.
 
