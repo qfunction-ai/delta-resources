@@ -11,4 +11,4 @@ description: This skill retrieves SumoLogic logs and analyzes them for high conf
 
 4. If you have any findings from the previous step, determine whether they are correlated, and if they are, you have an incident.
 
-5. If you have an incident, create a timeline of the incident from the flagged events. If you don't have an incident, inform the user of any flagged events and why you flagged them. If you don't have any flagged events at all, inform the user that no malicious activity was found
+5. If you have an incident, create a highly structured, sequential Event Stream that simulates the flow of time and emphasizes the progression of the incident, making it easier to follow the narrative of the incident from the flagged events. If you don't have an incident, inform the user of any flagged events and why you flagged them. If you don't have any flagged events at all, inform the user that no malicious activity was found
