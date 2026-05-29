@@ -10,10 +10,15 @@ def query_sumologic(
     from_time: str = None,
     to_time: str = None,
     max_results: int = 1_000,
-) -> list[dict]:
+) -> dict:
     """Query SumoLogic logs via Search Job API v2.
 
     Credentials and API endpoint are auto-configured from the agent's environment.
+
+    When the agent has a staging directory (LETTA_STAGING_DIR), full results are
+    written to a file and a compact summary is returned. The agent can then use
+    grep_files or file_read to search the full data. Without a staging directory,
+    compact records are returned directly.
 
     Args:
         query: SumoLogic query string.
@@ -22,7 +27,9 @@ def query_sumologic(
         max_results: Maximum messages to return. Default 1000.
 
     Returns:
-        List of compact log records with key fields extracted.
+        When staging is available: dict with summary (record_count, time_range,
+        file_path, sample_records). When staging is not available: dict with
+        compact_records (list of extracted key fields).
     """
     now = datetime.now(timezone.utc)
 
@@ -95,16 +102,68 @@ def query_sumologic(
             except Exception:
                 pass
 
-    compact = []
+    # Parse raw logs
+    parsed_results = []
     for m in results:
         raw = m.get("_raw", "{}")
         try:
             parsed = json.loads(raw) if isinstance(raw, str) else raw
         except (json.JSONDecodeError, TypeError):
-            compact.append({"_raw": str(raw)[:500]})
-            continue
+            parsed = {"_raw": str(raw)[:500]}
+        parsed_results.append(parsed)
 
+    staging_dir = os.getenv("LETTA_STAGING_DIR")
+
+    if staging_dir:
+        # Write full results to staging directory
+        out_dir = os.path.join(staging_dir, "sumologic")
+        os.makedirs(out_dir, exist_ok=True)
+        out_path = os.path.join(out_dir, "query_results.json")
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(parsed_results, f, indent=2, default=str)
+
+        # Build compact summary for the tool return
+        sample = _extract_compact(parsed_results[:3])
+        return {
+            "record_count": len(parsed_results),
+            "time_range": {
+                "from": from_dt.isoformat(),
+                "to": to_dt.isoformat(),
+            },
+            "file_path": "sumologic/query_results.json",
+            "sample_records": sample,
+            "hint": "Use grep_files to search the full results, or file_read to view specific records.",
+        }
+    else:
+        # No staging — return compact records directly
+        return {"compact_records": _extract_compact(parsed_results)}
+
+
+def _extract_compact(records: list[dict]) -> list[dict]:
+    """Extract key security fields from parsed log records."""
+    _keep_keys = {
+        "event_id", "EventID", "event_type", "EventType",
+        "level", "Level", "severity", "Severity",
+        "source", "Source", "Provider", "provider",
+        "message", "Message", "message_text",
+        "computer", "ComputerName", "hostname", "Host",
+        "user", "UserName", "User", "account", "SubjectUserName",
+        "process", "ProcessName", "Image", "process_name",
+        "pid", "ProcessId", "process_id",
+        "command", "CommandLine", "command_line",
+        "action", "Action", "action_type",
+        "ip", "IpAddress", "SourceIp", "DestIp", "source_ip", "dest_ip",
+        "port", "Port", "SourcePort", "DestPort",
+        "protocol", "Protocol",
+        "result", "Result", "status", "Status",
+        "record_id", "RecordID",
+    }
+    _keep_lower = {k.lower() for k in _keep_keys}
+
+    compact = []
+    for parsed in records:
         record = {}
+
         # Extract timestamp
         for ts_key in ("@timestamp", "timestamp", "time", "TimeGenerated", "UtcTime"):
             val = parsed.get(ts_key)
@@ -112,28 +171,8 @@ def query_sumologic(
                 record["timestamp"] = val
                 break
 
-        # Extract common security/log fields — keep only what's useful
-        _keep_keys = {
-            "event_id", "EventID", "event_type", "EventType",
-            "level", "Level", "severity", "Severity",
-            "source", "Source", "Provider", "provider",
-            "message", "Message", "message_text",
-            "computer", "ComputerName", "hostname", "Host",
-            "user", "UserName", "User", "account", "SubjectUserName",
-            "process", "ProcessName", "Image", "process_name",
-            "pid", "ProcessId", "process_id",
-            "command", "CommandLine", "command_line",
-            "action", "Action", "action_type",
-            "ip", "IpAddress", "SourceIp", "DestIp", "source_ip", "dest_ip",
-            "port", "Port", "SourcePort", "DestPort",
-            "protocol", "Protocol",
-            "result", "Result", "status", "Status",
-            "record_id", "RecordID",
-        }
         for k, v in parsed.items():
-            if k in _keep_keys:
-                record[k] = v
-            elif k.lower() in {k_.lower() for k_ in _keep_keys}:
+            if k in _keep_keys or k.lower() in _keep_lower:
                 record[k] = v
 
         # Flatten nested event_id / execution / rendering_info
@@ -141,12 +180,12 @@ def query_sumologic(
             nested = parsed.get(nested_key, {})
             if isinstance(nested, dict):
                 for nk, nv in nested.items():
-                    if nk in _keep_keys or nk.lower() in {k_.lower() for k_ in _keep_keys}:
+                    if nk in _keep_keys or nk.lower() in _keep_lower:
                         record[nk] = nv
 
         # If nothing was extracted, keep a truncated raw fallback
-        if len(record) <= 1:  # only timestamp
-            record["_raw"] = str(raw)[:500]
+        if len(record) <= 1:
+            record["_raw"] = str(parsed)[:500]
 
         compact.append(record)
 
