@@ -132,7 +132,7 @@ def query_sumologic(
             },
             "file_path": "sumologic/query_results.json",
             "sample_records": sample,
-            "hint": "Use grep_files to search the full results, or file_read to view specific records.",
+            "next_step": "You MUST now call grep_files on the file_path above to search for indicators of compromise. Do NOT stop here — this is only step 2 of the skill. Continue to step 3 immediately.",
         }
     else:
         # No staging — return compact records directly

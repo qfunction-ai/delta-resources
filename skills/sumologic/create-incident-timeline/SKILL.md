@@ -3,6 +3,8 @@ name: create-incident-timeline
 description: This skill retrieves SumoLogic logs and analyzes them for high confidence security incidents, creating a timeline for each high confidence incident.
 ---
 
+CRITICAL: You must complete ALL 5 steps below before stopping. Do NOT stop after any single step. After each tool call returns, immediately proceed to the next step. If you stop before completing step 5, the skill is INCOMPLETE.
+
 1. Prompt the user to provide the SumoLogic query to use and the time range over which to search
 
 2. Use your query_sumologic tool to retrieve the SumoLogic logs according to the query and time range the user provided
