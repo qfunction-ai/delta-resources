@@ -17,8 +17,7 @@ CRITICAL: You must complete ALL 5 steps below before stopping. Do NOT stop after
      grep_files(pattern="certutil|mshta|rundll32|regsvr32|msiexec|wscript|cscript|winrs|systeminfo|bitsadmin|net user|Domain Admins", include="*.json")
 
      This single call searches for: LOLBIN executable names (certutil, mshta, rundll32, regsvr32, msiexec, wscript, cscript, winrs, systeminfo,
-     bitsadmin), reconnaissance commands (net user, Domain Admins), PowerShell download cradles, certutil with -urlcache or -decode, mshta with http,
-     cmd.exe with encoded commands, and base64-encoded strings. Keep track of all findings.
+     bitsadmin), reconnaissance commands (net user, Domain Admins), certutil with -urlcache or -decode, and mshta with http. Keep track of all findings.
 
 4. If you have any findings from the previous step, determine whether they are correlated, and if they are, you have an incident.
 
