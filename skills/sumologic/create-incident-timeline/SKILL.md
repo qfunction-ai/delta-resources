@@ -14,9 +14,7 @@ CRITICAL: You must complete ALL 5 steps below before stopping. Do NOT stop after
      actual LOLBIN executable names and suspicious patterns. Use a single grep_files call with regex alternation (the | operator) to search for
      all patterns at once:
 
-     grep_files(pattern="certutil|mshta|rundll32|regsvr32|msiexec|wscript|cscript|winrs|systeminfo|bitsadmin|net user|Domain
-     Admins|powershell.*(http|Net\.WebClient|DownloadString|Invoke-WebRequest|DownloadFile)|certutil.*(-urlcache|-decode)|mshta.*http|cmd\.exe.*(-enc
-     |-encoded)|[A-Za-z0-9+/]{50,}={0,2}", include="*.json")
+     grep_files(pattern="certutil|mshta|rundll32|regsvr32|msiexec|wscript|cscript|winrs|systeminfo|bitsadmin|net user|Domain Admins", include="*.json")
 
      This single call searches for: LOLBIN executable names (certutil, mshta, rundll32, regsvr32, msiexec, wscript, cscript, winrs, systeminfo,
      bitsadmin), reconnaissance commands (net user, Domain Admins), PowerShell download cradles, certutil with -urlcache or -decode, mshta with http,
