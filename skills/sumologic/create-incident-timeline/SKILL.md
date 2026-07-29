@@ -9,7 +9,18 @@ CRITICAL: You must complete ALL 5 steps below before stopping. Do NOT stop after
 
 2. Use your query_sumologic tool to retrieve the SumoLogic logs according to the query and time range the user provided
 
-3. The query_sumologic tool returns a Python dictionary with a "file_path" key that tells you where the full results are stored. Use your grep_files tool to search the results file for indicators of compromise. Do NOT search for the literal string "LOLBINs" — instead, search for actual LOLBIN executable names and suspicious patterns. Run multiple grep_files calls for known LOLBINs such as: certutil, mshta, rundll32, regsvr32, msiexec, wscript, net user, Domain Admins, systeminfo, winrs, cscript, powershell with download cradles, cmd.exe with encoded commands, bitsadmin, certutil with -urlcache or -decode, mshta with http, and any base64-encoded command strings. Keep track of all findings.
+3. The query_sumologic tool returns a Python dictionary with a "file_path" key that tells you where the full results are stored. Use your
+     grep_files tool to search the results file for indicators of compromise. Do NOT search for the literal string "LOLBINs" — instead, search for
+     actual LOLBIN executable names and suspicious patterns. Use a single grep_files call with regex alternation (the | operator) to search for
+     all patterns at once:
+
+     grep_files(pattern="certutil|mshta|rundll32|regsvr32|msiexec|wscript|cscript|winrs|systeminfo|bitsadmin|net user|Domain
+     Admins|powershell.*(http|Net\.WebClient|DownloadString|Invoke-WebRequest|DownloadFile)|certutil.*(-urlcache|-decode)|mshta.*http|cmd\.exe.*(-enc
+     |-encoded)|[A-Za-z0-9+/]{50,}={0,2}", include="*.json")
+
+     This single call searches for: LOLBIN executable names (certutil, mshta, rundll32, regsvr32, msiexec, wscript, cscript, winrs, systeminfo,
+     bitsadmin), reconnaissance commands (net user, Domain Admins), PowerShell download cradles, certutil with -urlcache or -decode, mshta with http,
+     cmd.exe with encoded commands, and base64-encoded strings. Keep track of all findings.
 
 4. If you have any findings from the previous step, determine whether they are correlated, and if they are, you have an incident.
 
