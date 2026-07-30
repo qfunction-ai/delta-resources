@@ -1,0 +1,5 @@
+name: query_sumologic
+description: "Queries Sumologic for events"
+entry_point: query_sumologic
+source: scripts/query_sumologic.py
+requirements: requirements.txt
